@@ -1,0 +1,116 @@
+/* Hero Section */
+.hero {
+    padding-inline: 2rem;       
+    padding-block: 7rem;       
+    background-image: linear-gradient(to bottom, 
+        rgba(255, 255, 255, 0.393) 0%,
+        rgb(255, 255, 255) 100%
+    ), url('assets/philippines.jpg');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    text-align: center;
+}
+
+.hero img {
+    width: 56px;                
+    height: auto;
+    margin: 0 auto 1.5rem;
+    display: block; 
+}
+
+.hero h1 {
+    margin-bottom: 1rem;
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--primary);
+    font-family: Instrument Serif, serif;
+    font-size: 3rem;            
+}
+
+.hero p {
+    font-size: 1rem;            
+    margin-bottom: 2rem;
+    color: var(--text-dark);
+}
+
+/* Features Section */
+.features {
+    padding: 3rem 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.feature {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 8px;        
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.feature:hover {
+    box-shadow: 0 4px 12px var(--primary-20);
+}
+
+.feature i {
+    font-size: 2rem;            
+    color: var(--primary);
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.feature:hover i {
+    transform: scale(1.1);
+}
+
+.feature h2 {
+    font-family: Instrument Serif, serif;
+    font-size: 1.5rem;          
+    margin-bottom: 0.75rem;
+    color: var(--primary);
+}
+
+.feature p {
+    color: var(--primary-60);
+    font-size: 0.9rem;          
+    margin-bottom: 0;
+}
+
+/* CTA Button */
+.cta-button {
+    display: inline-block;
+    background-color: var(--primary);
+    color: var(--text-light);
+    padding: 0.50rem 1.5rem;    
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.cta-button:hover {
+    background-color: var(--primary-80);
+    color: var(--text-light);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero {
+    padding: 4rem 1rem 3rem;
+  }
+  
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .features {
+    padding: 2rem 1rem;
+  }
+}

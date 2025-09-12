@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="settings.css">
+    <title>Settings | gabaylakbay</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="home.html"><img src="logo.svg" alt="gabaylakbay Logo"></a>
+        </div>
+        <div class="navigation">
+            <a href="home.html">Home</a>
+            <a href="book.html">Book</a>
+            <a href="schedules.html">Schedules</a>
+            <a href="map.html">Map</a>
+        </div>
+    </nav>
+
+    <main class="settings-container">
+        <!-- Sidebar Navigation -->
+        <aside class="settings-sidebar">
+            <h2>Settings</h2>
+            <div class="settings-nav">
+                <h3>Account Settings</h3>
+                <button class="settings-nav-item active" data-section="edit-profile">
+                    <i class="fa-regular fa-user"></i>
+                    Edit Profile
+                </button>
+                <button class="settings-nav-item" data-section="change-password">
+                    <i class="fa-solid fa-lock"></i>
+                    Change Password
+                </button>
+                <button class="settings-nav-item" data-section="privacy-security">
+                    <i class="fa-solid fa-shield"></i>
+                    Privacy and Security
+                </button>
+
+                <h3>Application Settings</h3>
+                <button class="settings-nav-item" data-section="accessibility">
+                    <i class="fa-solid fa-universal-access"></i>
+                    Accessibility
+                </button>
+                <button class="settings-nav-item" data-section="display">
+                    <i class="fa-solid fa-palette"></i>
+                    Display
+                </button>
+                <button class="settings-nav-item" data-section="language">
+                    <i class="fa-solid fa-language"></i>
+                    Language
+                </button>
+
+                <h3 class="warning-zone">Warning Zone</h3>
+                <button class="settings-nav-item warning" data-section="disable-account">
+                    <i class="fa-solid fa-user-slash"></i>
+                    Disable Account
+                </button>
+                <button class="settings-nav-item danger" data-section="delete-account">
+                    <i class="fa-solid fa-trash"></i>
+                    Delete Account
+                </button>
+                <button class="settings-nav-item" data-section="sign-out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <div class="settings-content">
+            <!-- Edit Profile Section -->
+            <section id="edit-profile" class="settings-section active">
+                <h2>Edit Profile</h2>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" name="fullName" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+                    </div>
+                    <button type="submit" class="save-button">Save Changes</button>
+                </form>
+            </section>
+
+            <!-- Language Section -->
+            <section id="language" class="settings-section">
+                <h2>Language</h2>
+                <div class="language-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" placeholder="Search Language">
+                </div>
+                <div class="language-options">
+                    <div class="language-option">
+                        <span class="language-info">
+                            <span class="language-name">Filipino</span>
+                            <span class="language-native">Pilipino</span>
+                        </span>
+                        <i class="fa-solid fa-check check-icon hidden"></i>
+                    </div>
+                    <div class="language-option">
+                        <span class="language-info">
+                            <span class="language-name">English (US)</span>
+                            <span class="language-native">English (US)</span>
+                        </span>
+                        <i class="fa-solid fa-check check-icon"></i>
+                    </div>
+                    <div class="language-option">
+                        <span class="language-info">
+                            <span class="language-name">Bisaya</span>
+                            <span class="language-native">Cebuano</span>
+                        </span>
+                        <i class="fa-solid fa-check check-icon hidden"></i>
+                    </div>
+                    <div class="language-option">
+                        <span class="language-info">
+                            <span class="language-name">Ilocano</span>
+                            <span class="language-native">Kapampangan</span>
+                        </span>
+                        <i class="fa-solid fa-check check-icon hidden"></i>
+                    </div>
+                    <div class="language-option">
+                        <span class="language-info">
+                            <span class="language-name">한국어</span>
+                            <span class="language-native">Korean</span>
+                        </span>
+                        <i class="fa-solid fa-check check-icon hidden"></i>
+                    </div>
+                    <div class="language-option">
+                        <span class="language-info">
+                            <span class="language-name">日本語</span>
+                            <span class="language-native">Japanese</span>
+                        </span>
+                        <i class="fa-solid fa-check check-icon hidden"></i>
+                    </div>
+                    <div class="language-option">
+                        <span class="language-info">
+                            <span class="language-name">中文(简体)</span>
+                            <span class="language-native">Simplified Chinese</span>
+                        </span>
+                        <i class="fa-solid fa-check check-icon hidden"></i>
+                    </div>
+                </div>
+                <div class="language-footer">
+                    <p>Your language not supported?</p>
+                    <a href="mailto:gabaylakbay.app@gmail.com">Email us at gabaylakbay.app@gmail.com</a>
+                </div>
+            </section>
+
+            <!-- Change Password Section -->
+            <section id="change-password" class="settings-section">
+                <h2>Change Password</h2>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" name="currentPassword" placeholder="Enter your current password">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" placeholder="Enter your new password">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your new password">
+                    </div>
+                    <button type="submit" class="save-button">Change Password</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script src="settings.js"></script>
+</body>
+</html>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="home.html"><img src="assets/logo1.svg" alt="gabaylakbay Logo"></a>
+        </div>
+        <div class="nav-profile-container">
+            <div class="navigation">
+                <a href="home.html">Home</a>
+                <a href="settings.html">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+
+    </main>
+</body>
+</html>
