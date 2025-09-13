@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import Navbar from '../components/Navbar';
+import ChatButton from '../components/ChatButton';
 import { LanguageContext } from '../contexts/LanguageContext';
 
 const sections = [
@@ -150,6 +151,8 @@ function Settings() {
           </section>
         </div>
       </main>
+      
+      <ChatButton />
     </>
   );
 }

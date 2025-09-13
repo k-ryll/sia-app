@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import logo2 from '../assets/logo2.svg';
 import Navbar from '../components/Navbar';
+import ChatButton from '../components/ChatButton';
 import { LanguageContext } from '../contexts/LanguageContext';
 
 function Home() {
@@ -36,6 +37,8 @@ function Home() {
           </div>
         </section>
       </main>
+      
+      <ChatButton />
     </>
   );
 }

@@ -1,83 +1,90 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from transformers import pipeline
+from datetime import datetime
+from langdetect import detect, DetectorFactory
 
-app = FastAPI()
+DetectorFactory.seed = 0
 
-# Load OPUS-MT models for Philippine languages
-translator_en_tl = pipeline("translation", model="Helsinki-NLP/opus-mt-en-tl")
-translator_tl_en = pipeline("translation", model="Helsinki-NLP/opus-mt-tl-en")
-translator_en_ceb = pipeline("translation", model="Helsinki-NLP/opus-mt-en-ceb")
-translator_en_ilo = pipeline("translation", model="Helsinki-NLP/opus-mt-en-ilo")
-translator_en_pag = pipeline("translation", model="Helsinki-NLP/opus-mt-en-pag")
+app = FastAPI(title="GabayLakbay Translation Microservice")
 
-# Load MBART for international languages
-translator_mbart = pipeline("translation", model="facebook/mbart-large-50-many-to-many-mmt")
+# --- CORS ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # for development, allow all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Language mapping
-LANGUAGE_MAP = {
-    "en": "en_XX",
-    "tl": "tl",
-    "ceb": "ceb",
-    "ilo": "ilo",
-    "pag": "pag",
-    "zh": "zh_CN",
-    "ja": "ja_XX",
-    "ko": "ko_KR"
+SUPPORTED_LANGS = ["en", "fil", "ceb", "ilo", "pag", "zh", "ja", "ko"]
+
+MODEL_MAP = {
+    ("en", "fil"): "Helsinki-NLP/opus-mt-en-tl",
+    ("fil", "en"): "Helsinki-NLP/opus-mt-tl-en",
+    ("en", "ja"): "Helsinki-NLP/opus-mt-en-jap",
+    ("ja", "en"): "Helsinki-NLP/opus-mt-jap-en",
+    ("en", "zh"): "Helsinki-NLP/opus-mt-en-zh",
+    ("zh", "en"): "Helsinki-NLP/opus-mt-zh-en",
+    ("en", "ko"): "facebook/nllb-200-distilled-600M",
+    ("ko", "en"): "facebook/nllb-200-distilled-600M",
+    ("en", "pag"): "Helsinki-NLP/opus-mt-en-pag",
+    ("pag", "en"): "Helsinki-NLP/opus-mt-pag-en",
+    ("en", "ilo"): "Helsinki-NLP/opus-mt-en-ilo",
+    ("ilo", "en"): "Helsinki-NLP/opus-mt-ilo-en",
+    ("en", "ceb"): "Helsinki-NLP/opus-mt-en-ceb",
+    ("ceb", "en"): "Helsinki-NLP/opus-mt-ceb-en",
 }
 
-SUPPORTED_LANGUAGES = [
-    {"code": "en", "name": "English"},
-    {"code": "tl", "name": "Filipino / Tagalog"},
-    {"code": "ceb", "name": "Cebuano / Bisaya"},
-    {"code": "ilo", "name": "Ilocano"},
-    {"code": "pag", "name": "Pangasinan"},
-    {"code": "zh", "name": "Chinese"},
-    {"code": "ja", "name": "Japanese"},
-    {"code": "ko", "name": "Korean"}
-]
+TRANSLATORS = {}
+
+def run_translation(text, src, tgt):
+    if (src, tgt) in MODEL_MAP:
+        if (src, tgt) not in TRANSLATORS:
+            model = MODEL_MAP[(src, tgt)]
+            print(f"Loading model for {src} -> {tgt}: {model}")
+            TRANSLATORS[(src, tgt)] = pipeline("translation", model=model)
+        translator = TRANSLATORS[(src, tgt)]
+        return translator(text)[0]['translation_text']
+    return None
 
 class TranslationRequest(BaseModel):
     text: str
-    from_lang: str
-    to_lang: str
+    target: str   # ✅ only "target"
 
 @app.get("/")
-def read_root():
-    return {"message": "Translation microservice is running!"}
+def root():
+    return {"message": "Translation microservice running."}
+
+@app.post("/translate")
+@app.post("/translate/")
+def translate(req: TranslationRequest):
+    try:
+        src_lang = detect(req.text).lower()
+        tgt_lang = req.target.lower()
+
+        # --- normalize "tl" to "fil"
+        if src_lang == "tl": src_lang = "fil"
+        if tgt_lang == "tl": tgt_lang = "fil"
+
+        if src_lang == tgt_lang:
+            return {"original": req.text, "translated": req.text, "target_lang": tgt_lang}
+
+        result = run_translation(req.text, src_lang, tgt_lang)
+
+        if not result and src_lang != "en" and tgt_lang != "en":
+            to_en = run_translation(req.text, src_lang, "en")
+            if to_en:
+                result = run_translation(to_en, "en", tgt_lang)
+
+        if not result:
+            return {"error": f"Unsupported language pair: {src_lang}-{tgt_lang}"}
+
+        return {"original": req.text, "translated": result, "target_lang": tgt_lang}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/languages")
 def get_languages():
-    return {"languages": SUPPORTED_LANGUAGES}
-
-@app.post("/translate")
-def translate(req: TranslationRequest):
-    text = req.text
-    from_lang = LANGUAGE_MAP.get(req.from_lang, req.from_lang)
-    to_lang = LANGUAGE_MAP.get(req.to_lang, req.to_lang)
-
-    # OPUS-MT routes
-    if req.from_lang == "en" and req.to_lang == "tl":
-        result = translator_en_tl(text)
-    elif req.from_lang == "tl" and req.to_lang == "en":
-        result = translator_tl_en(text)
-    elif req.from_lang == "en" and req.to_lang == "ceb":
-        result = translator_en_ceb(text)
-    elif req.from_lang == "en" and req.to_lang == "ilo":
-        result = translator_en_ilo(text)
-    elif req.from_lang == "en" and req.to_lang == "pag":
-        result = translator_en_pag(text)
-    # MBART routes
-    elif req.from_lang in ["en", "en_XX"] and to_lang in ["zh_CN", "ja_XX", "ko_KR"]:
-        result = translator_mbart(text, src_lang="en_XX", tgt_lang=to_lang)
-    elif from_lang in ["zh_CN", "ja_XX", "ko_KR"] and to_lang == "en_XX":
-        result = translator_mbart(text, src_lang=from_lang, tgt_lang="en_XX")
-    else:
-        return {"error": f"Unsupported language pair: {req.from_lang}-{req.to_lang}"}
-
-    return {
-        "originalText": text,
-        "translatedText": result[0]["translation_text"],
-        "fromLanguage": req.from_lang,
-        "toLanguage": req.to_lang
-    }
+    return {"languages": SUPPORTED_LANGS}

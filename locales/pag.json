@@ -32,5 +32,15 @@
   "change_password_btn": "Palit-an so Password",
   "search_language": "Hanapan so Salita",
   "language_not_supported": "Awan pa so salita mo?",
-  "email_us": "Email-an kami: gabaylakbay.app@gmail.com"
+  "email_us": "Email-an kami: gabaylakbay.app@gmail.com",
+  "translate_text": "I-translate so Text",
+  "translate_description": "Ilagay so inyong mensahe tan i-translate ed inyong kayat a salita",
+  "enter_text": "Ilagay so inyong text:",
+  "enter_text_placeholder": "I-type so inyong mensahe ditoy...",
+  "translating": "Agt-translate...",
+  "translate": "I-translate",
+  "clear": "I-clear",
+  "translated_text": "Na-translate a text:",
+  "copy": "I-copy",
+  "translation_error": "Aga nagballigi so translation. Subukan na naman."
 }

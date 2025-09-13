@@ -32,5 +32,15 @@
   "change_password_btn": "Change Password",
   "search_language": "Search Language",
   "language_not_supported": "Your language not supported?",
-  "email_us": "Email us at gabaylakbay.app@gmail.com"
+  "email_us": "Email us at gabaylakbay.app@gmail.com",
+  "translate_text": "Translate Text",
+  "translate_description": "Enter your message and it will be translated to your preferred language",
+  "enter_text": "Enter your text:",
+  "enter_text_placeholder": "Type your message here...",
+  "translating": "Translating...",
+  "translate": "Translate",
+  "clear": "Clear",
+  "translated_text": "Translated text:",
+  "copy": "Copy",
+  "translation_error": "Translation failed. Please try again."
 }

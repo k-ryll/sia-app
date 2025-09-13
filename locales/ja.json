@@ -32,5 +32,15 @@
   "change_password_btn": "パスワードを変更",
   "search_language": "言語を検索",
   "language_not_supported": "言語が見つかりませんか？",
-  "email_us": "メールで連絡: gabaylakbay.app@gmail.com"
+  "email_us": "メールで連絡: gabaylakbay.app@gmail.com",
+  "translate_text": "テキスト翻訳",
+  "translate_description": "メッセージを入力すると、お好みの言語に翻訳されます",
+  "enter_text": "テキスト入力:",
+  "enter_text_placeholder": "ここにメッセージを入力してください...",
+  "translating": "翻訳中...",
+  "translate": "翻訳",
+  "clear": "クリア",
+  "translated_text": "翻訳されたテキスト:",
+  "copy": "コピー",
+  "translation_error": "翻訳に失敗しました。もう一度お試しください。"
 }

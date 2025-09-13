@@ -32,5 +32,15 @@
   "change_password_btn": "更改密码",
   "search_language": "搜索语言",
   "language_not_supported": "没有找到你的语言？",
-  "email_us": "联系我们: gabaylakbay.app@gmail.com"
+  "email_us": "联系我们: gabaylakbay.app@gmail.com",
+  "translate_text": "翻译文本",
+  "translate_description": "输入您的消息，它将翻译为您偏好的语言",
+  "enter_text": "输入文本：",
+  "enter_text_placeholder": "在此输入您的消息...",
+  "translating": "翻译中...",
+  "translate": "翻译",
+  "clear": "清除",
+  "translated_text": "翻译后的文本：",
+  "copy": "复制",
+  "translation_error": "翻译失败。请重试。"
 }

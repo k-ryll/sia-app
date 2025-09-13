@@ -32,5 +32,15 @@
   "change_password_btn": "Ili-sa ang Password",
   "search_language": "Pangitaa ang Pinulongan",
   "language_not_supported": "Wala pa ba ang imong pinulongan?",
-  "email_us": "I-email mi: gabaylakbay.app@gmail.com"
+  "email_us": "I-email mi: gabaylakbay.app@gmail.com",
+  "translate_text": "I-translate ang Text",
+  "translate_description": "Ilagay ang inyong mensahe ug i-translate sa inyong gustong pinulongan",
+  "enter_text": "Ilagay ang inyong text:",
+  "enter_text_placeholder": "I-type ang inyong mensahe dinhi...",
+  "translating": "Nagt-translate...",
+  "translate": "I-translate",
+  "clear": "I-clear",
+  "translated_text": "Na-translate na text:",
+  "copy": "I-copy",
+  "translation_error": "Wala nagtagumpay ang translation. Subukan pag-usab."
 }

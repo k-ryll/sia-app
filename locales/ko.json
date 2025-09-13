@@ -32,5 +32,15 @@
   "change_password_btn": "비밀번호 변경",
   "search_language": "언어 검색",
   "language_not_supported": "언어가 지원되지 않나요?",
-  "email_us": "이메일 문의: gabaylakbay.app@gmail.com"
+  "email_us": "이메일 문의: gabaylakbay.app@gmail.com",
+  "translate_text": "텍스트 번역",
+  "translate_description": "메시지를 입력하면 선호하는 언어로 번역됩니다",
+  "enter_text": "텍스트 입력:",
+  "enter_text_placeholder": "여기에 메시지를 입력하세요...",
+  "translating": "번역 중...",
+  "translate": "번역",
+  "clear": "지우기",
+  "translated_text": "번역된 텍스트:",
+  "copy": "복사",
+  "translation_error": "번역에 실패했습니다. 다시 시도해주세요."
 }

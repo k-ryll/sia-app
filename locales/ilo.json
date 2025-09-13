@@ -32,5 +32,15 @@
   "change_password_btn": "Sukatan ti Password",
   "search_language": "Biroken ti Pagsasao",
   "language_not_supported": "Awan ti pagsasao yo?",
-  "email_us": "I-email dakami: gabaylakbay.app@gmail.com"
+  "email_us": "I-email dakami: gabaylakbay.app@gmail.com",
+  "translate_text": "I-translate ti Text",
+  "translate_description": "Ilagay ti inyong mensahe ket i-translate iti inyong kayat a pagsasao",
+  "enter_text": "Ilagay ti inyong text:",
+  "enter_text_placeholder": "I-type ti inyong mensahe ditoy...",
+  "translating": "Agt-translate...",
+  "translate": "I-translate",
+  "clear": "I-clear",
+  "translated_text": "Na-translate a text:",
+  "copy": "I-copy",
+  "translation_error": "Saan a nagballigi ti translation. Subukan manen."
 }

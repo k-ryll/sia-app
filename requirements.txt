@@ -4,3 +4,6 @@ transformers
 sentencepiece
 protobuf 
 sacremoses
+langdetect
+pymongo
+torch
