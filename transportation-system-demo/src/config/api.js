@@ -2,7 +2,8 @@ export const API_CONFIG = {
   BASE_URL: "http://localhost:8000",
   ENDPOINTS: {
     TRANSLATE: "/translate/",   // ✅ no trailing slash
-    LANGUAGES: "/languages"
+    LANGUAGES: "/languages",
+    MESSAGES: '/messages',  
   }
 };
 

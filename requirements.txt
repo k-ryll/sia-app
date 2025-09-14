@@ -7,3 +7,5 @@ sacremoses
 langdetect
 pymongo
 torch
+motor
+

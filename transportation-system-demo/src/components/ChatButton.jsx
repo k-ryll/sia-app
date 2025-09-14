@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { LanguageContext } from '../contexts/LanguageContext';
 import translationService from '../services/translationService';
 import './ChatButton.css';
@@ -6,56 +6,88 @@ import './ChatButton.css';
 function ChatButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
-  const [translatedMessage, setTranslatedMessage] = useState('');
-  const [isTranslating, setIsTranslating] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [isSending, setIsSending] = useState(false);
   const [apiError, setApiError] = useState('');
   const [connectionStatus, setConnectionStatus] = useState(null);
   const { language, translations } = useContext(LanguageContext);
+  const [showOriginalMap, setShowOriginalMap] = useState({});
+
+  // fetchMessages, handleSendMessage, etc...
+
+  // Fetch messages whenever language changes
+  useEffect(() => {
+    fetchMessages();
+  }, [language]);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await translationService.getMessages(language);
+
+      // Handle both array and object responses
+      const fetched =
+        Array.isArray(res) ? res : res.messages ? res.messages : [];
+
+      setMessages(fetched);
+    } catch (error) {
+      console.error('Fetch messages error:', error);
+      setApiError(error.message);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
 
-    setIsTranslating(true);
+    // Optimistic UI update with backend-like shape
+    const optimisticMsg = {
+      id: Date.now().toString(),
+      original: message,
+      translation: null,
+      timestamp: new Date().toISOString(),
+      pending: true,
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
     setApiError('');
+    setIsSending(true);
+
     try {
-      const translated = await translateText(message, language);
-      setTranslatedMessage(translated);
+      await translationService.saveMessage(message);
+
+      // Allow backend to translate before re-fetching
+      setTimeout(() => {
+        fetchMessages();
+      }, 800);
     } catch (error) {
-      console.error('Translation error:', error);
+      console.error('Send error:', error);
       setApiError(error.message);
-      setTranslatedMessage('');
     } finally {
-      setIsTranslating(false);
+      setMessage('');
+      setIsSending(false);
     }
   };
 
-  const translateText = async (text, targetLang) => {
-    return await translationService.translate(text, 'en', targetLang);
-  };
-
   const handleClear = () => {
+    setMessages([]);
     setMessage('');
-    setTranslatedMessage('');
     setApiError('');
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(translatedMessage);
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
   };
 
   const testConnection = async () => {
     const status = await translationService.testConnection();
     setConnectionStatus(status);
-    console.log('Connection test result:', status);
   };
 
   return (
     <>
       {/* Floating Chat Button */}
-      <button 
+      <button
         className={`chat-button ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
-        title={translations['translate_text'] || 'Translate Text'}
+        title={translations['send_message'] || 'Send Message'}
       >
         <i className={`fa-solid ${isOpen ? 'fa-times' : 'fa-comments'}`}></i>
       </button>
@@ -64,78 +96,69 @@ function ChatButton() {
       {isOpen && (
         <div className="chat-modal">
           <div className="chat-header">
-            <h3>{translations['translate_text'] || 'Translate Text'}</h3>
-            <button 
-              className="close-button"
-              onClick={() => setIsOpen(false)}
-            >
+            <h3>{translations['send_message'] || 'Send Message'}</h3>
+            <button className="close-button" onClick={() => setIsOpen(false)}>
               <i className="fa-solid fa-times"></i>
             </button>
           </div>
-          
+
           <div className="chat-content">
-            <p className="chat-description">
-              {translations['translate_description'] || 'Enter your message and it will be translated to your preferred language'}
-            </p>
-            
-            <div className="input-section">
-              <label htmlFor="message-input">
-                {translations['enter_text'] || 'Enter your text:'}
-              </label>
-              <textarea
-                id="message-input"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={translations['enter_text_placeholder'] || 'Type your message here...'}
-                rows="3"
-              />
-              <div className="button-group">
-                <button 
-                  onClick={handleSendMessage}
-                  disabled={!message.trim() || isTranslating}
-                  className="translate-btn"
-                >
-                  {isTranslating ? (
-                    <>
-                      <i className="fa-solid fa-spinner fa-spin"></i>
-                      {translations['translating'] || 'Translating...'}
-                    </>
-                  ) : (
-                    <>
-                      <i className="fa-solid fa-language"></i>
-                      {translations['translate'] || 'Translate'}
-                    </>
-                  )}
-                </button>
-                <button 
-                  onClick={handleClear}
-                  className="clear-btn"
-                >
-                  <i className="fa-solid fa-trash"></i>
-                  {translations['clear'] || 'Clear'}
-                </button>
-              </div>
-              
-              {/* Connection Test Button */}
-              <div className="connection-test">
-                <button 
-                  onClick={testConnection}
-                  className="test-connection-btn"
-                >
-                  <i className="fa-solid fa-wifi"></i>
-                  Test Connection
-                </button>
-              </div>
+            <div className="messages-container">
+              {messages.length === 0 && (
+                <p className="no-messages">No messages yet.</p>
+              )}
+              {messages.map((msg) => {
+  const showOriginal = showOriginalMap[msg.id] || false;
+  const displayText = showOriginal ? msg.original || msg.text : msg.translation || msg.text;
+
+  return (
+    <div key={msg.id} className={`message-box ${msg.pending ? 'pending' : 'saved'}`}>
+      <p>{displayText}</p>
+      <small>{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''} {msg.pending && ' (sending...)'}</small>
+      <button
+        onClick={() =>
+          setShowOriginalMap(prev => ({ ...prev, [msg.id]: !prev[msg.id] }))
+        }
+      >
+        {showOriginal ? 'Show Translated' : 'Show Original'}
+      </button>
+    </div>
+  );
+})}
+
+
             </div>
 
             {connectionStatus && (
               <div className="connection-status">
-                <div className={`status-message ${connectionStatus.success ? 'success' : 'error'}`}>
-                  <i className={`fa-solid ${connectionStatus.success ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                <div
+                  className={`status-message ${
+                    connectionStatus.success ? 'success' : 'error'
+                  }`}
+                >
+                  <i
+                    className={`fa-solid ${
+                      connectionStatus.success
+                        ? 'fa-check-circle'
+                        : 'fa-exclamation-circle'
+                    }`}
+                  ></i>
                   <div>
-                    <strong>{connectionStatus.success ? 'Connected' : 'Connection Failed'}</strong>
-                    <p>{connectionStatus.success ? connectionStatus.message : connectionStatus.error}</p>
-                    {connectionStatus.suggestion && <p><em>{connectionStatus.suggestion}</em></p>}
+                    <strong>
+                      {connectionStatus.success
+                        ? 'Connected'
+                        : 'Connection Failed'}
+                    </strong>
+                    <p>
+                      {connectionStatus.success
+                        ? connectionStatus.message
+                        : connectionStatus.error}
+                    </p>
+                    {connectionStatus.suggestion && (
+                      <p>
+                        <em>{connectionStatus.suggestion}</em>
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -150,23 +173,49 @@ function ChatButton() {
               </div>
             )}
 
-            {translatedMessage && (
-              <div className="output-section">
-                <label>
-                  {translations['translated_text'] || 'Translated text:'}
-                </label>
-                <div className="translated-text">
-                  {translatedMessage}
-                </div>
-                <button 
-                  onClick={copyToClipboard}
-                  className="copy-btn"
+            {/* Input Section */}
+            <div className="input-section">
+              <textarea
+                id="message-input"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={
+                  translations['enter_text_placeholder'] ||
+                  'Type your message here...'
+                }
+                rows="3"
+              />
+              <div className="button-group">
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!message.trim() || isSending}
+                  className="send-btn"
                 >
-                  <i className="fa-solid fa-copy"></i>
-                  {translations['copy'] || 'Copy'}
+                  {isSending ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                      {translations['sending'] || 'Sending...'}
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-paper-plane"></i>
+                      {translations['send'] || 'Send'}
+                    </>
+                  )}
+                </button>
+                <button onClick={handleClear} className="clear-btn">
+                  <i className="fa-solid fa-trash"></i>
+                  {translations['clear'] || 'Clear'}
+                </button>
+                <button
+                  onClick={testConnection}
+                  className="test-connection-btn"
+                >
+                  <i className="fa-solid fa-wifi"></i>
+                  Test
                 </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
