@@ -1,13 +1,30 @@
 import { getApiUrl, API_CONFIG } from '../config/api';
 
 class TranslationService {
-  async saveMessage(text) {
+  // Map frontend language codes to backend language codes
+  mapLanguageCode(frontendLang) {
+    const mapping = {
+      'tl': 'fil',  // Frontend uses 'tl' for Filipino, backend uses 'fil'
+      'en': 'en',
+      'ceb': 'ceb',
+      'ilo': 'ilo',
+      'pag': 'pag',
+      'zh': 'zh',
+      'ja': 'ja',
+      'ko': 'ko'
+    };
+    return mapping[frontendLang] || 'en';
+  }
+
+  async saveMessage(text, targetLang = 'en') {
     const apiUrl = getApiUrl('/send');  // ✅ use /send instead of /messages
+    const backendLang = this.mapLanguageCode(targetLang);
+    
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text, target_lang: backendLang })
       });
 
       if (!response.ok) {
@@ -23,7 +40,8 @@ class TranslationService {
   }
 
   async getMessages(lang = 'en') {
-    const apiUrl = getApiUrl(`/messages?lang=${lang}`); // ✅ correct endpoint
+    const backendLang = this.mapLanguageCode(lang);
+    const apiUrl = getApiUrl(`/messages?lang=${backendLang}`); // ✅ correct endpoint
     try {
       const response = await fetch(apiUrl);
       if (!response.ok) {

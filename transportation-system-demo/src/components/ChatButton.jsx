@@ -12,6 +12,7 @@ function ChatButton() {
   const [connectionStatus, setConnectionStatus] = useState(null);
   const { language, translations } = useContext(LanguageContext);
   const [showOriginalMap, setShowOriginalMap] = useState({});
+  const [liveTranslations, setLiveTranslations] = useState({}); // Store live translations as fallbacks
 
   // fetchMessages, handleSendMessage, etc...
 
@@ -28,7 +29,20 @@ function ChatButton() {
       const fetched =
         Array.isArray(res) ? res : res.messages ? res.messages : [];
 
-      setMessages(fetched);
+      // Enhance messages with live translations as fallbacks
+      const enhancedMessages = fetched.map(msg => {
+        const liveTranslation = liveTranslations[msg.id];
+        return {
+          ...msg,
+          // Use database translation if available and different from original,
+          // otherwise use live translation as fallback
+          translation: msg.translation && msg.translation !== msg.original 
+            ? msg.translation 
+            : liveTranslation || msg.original
+        };
+      });
+
+      setMessages(enhancedMessages);
     } catch (error) {
       console.error('Fetch messages error:', error);
       setApiError(error.message);
@@ -51,9 +65,35 @@ function ChatButton() {
     setIsSending(true);
 
     try {
-      await translationService.saveMessage(message);
+      const response = await translationService.saveMessage(message, language);
+      
+      // Store the live translation for this message
+      if (response && response.message) {
+        const messageId = response.message.id;
+        const liveTranslation = response.message.translation;
+        
+        // Store live translation for fallback use
+        setLiveTranslations(prev => ({
+          ...prev,
+          [messageId]: liveTranslation
+        }));
+        
+        // Update the optimistic message with the immediate translation
+        setMessages((prev) => 
+          prev.map((msg) => 
+            msg.id === optimisticMsg.id 
+              ? { ...msg, translation: liveTranslation, pending: false }
+              : msg
+          )
+        );
+        
+        // Refresh messages to apply live translation fallbacks
+        setTimeout(() => {
+          fetchMessages();
+        }, 100);
+      }
 
-      // Allow backend to translate before re-fetching
+      // Allow backend to translate other languages before re-fetching
       setTimeout(() => {
         fetchMessages();
       }, 800);
@@ -70,6 +110,7 @@ function ChatButton() {
     setMessages([]);
     setMessage('');
     setApiError('');
+    setLiveTranslations({}); // Clear live translations when clearing messages
   };
 
   const copyToClipboard = (text) => {
@@ -109,12 +150,23 @@ function ChatButton() {
               )}
               {messages.map((msg) => {
   const showOriginal = showOriginalMap[msg.id] || false;
-  const displayText = showOriginal ? msg.original || msg.text : msg.translation || msg.text;
+  const liveTranslation = liveTranslations[msg.id];
+  
+  // Determine the best translation to show
+  const bestTranslation = msg.translation && msg.translation !== msg.original 
+    ? msg.translation 
+    : liveTranslation || msg.original;
+  
+  const displayText = showOriginal ? msg.original : bestTranslation;
 
   return (
     <div key={msg.id} className={`message-box ${msg.pending ? 'pending' : 'saved'}`}>
       <p>{displayText}</p>
-      <small>{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''} {msg.pending && ' (sending...)'}</small>
+      <small>
+        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''} 
+        {msg.pending && ' (sending...)'}
+        {liveTranslation && !msg.translation && ' (live translation)'}
+      </small>
       <button
         onClick={() =>
           setShowOriginalMap(prev => ({ ...prev, [msg.id]: !prev[msg.id] }))

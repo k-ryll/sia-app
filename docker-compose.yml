@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongo:
+    image: mongo:7.0
+    container_name: gabaylakbay-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: gabaylakbay
+    networks:
+      - app-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: gabaylakbay-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017/
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+    volumes:
+      # Mount for model caching (optional, for persistence)
+      - model_cache:/root/.cache/huggingface
+
+  # React Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: transportation-system-demo/Dockerfile
+    container_name: gabaylakbay-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  mongo_data:
+    driver: local
+  model_cache:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

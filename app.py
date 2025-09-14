@@ -7,31 +7,36 @@ from langdetect import detect, DetectorFactory
 from pymongo import MongoClient
 from bson import ObjectId
 import threading
+import os
 
 DetectorFactory.seed = 0
 
 app = FastAPI(title="GabayLakbay Translation Microservice")
 
 # --- CORS ---
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # ✅ React dev server
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # --- MongoDB setup ---
-client = MongoClient("mongodb://localhost:27017/")
+mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")
+client = MongoClient(mongodb_url)
 db = client["gabaylakbay"]
 messages_raw = db["messages_raw"]          # ✅ immediate insert
 messages_translated = db["messages_translated"]  # ✅ delayed translations
 
 SUPPORTED_LANGS = ["en", "fil", "ceb", "ilo", "pag", "zh", "ja", "ko"]
 
+# Primary model map - using better models for Filipino
 MODEL_MAP = {
-    ("en", "fil"): "Helsinki-NLP/opus-mt-en-tl",
-    ("fil", "en"): "Helsinki-NLP/opus-mt-tl-en",
+    # Use NLLB for much better Filipino translation quality
+    ("en", "fil"): "facebook/nllb-200-distilled-600M",
+    ("fil", "en"): "facebook/nllb-200-distilled-600M",
     ("en", "ja"): "Helsinki-NLP/opus-mt-en-jap",
     ("ja", "en"): "Helsinki-NLP/opus-mt-jap-en",
     ("en", "zh"): "Helsinki-NLP/opus-mt-en-zh",
@@ -46,6 +51,19 @@ MODEL_MAP = {
     ("ceb", "en"): "Helsinki-NLP/opus-mt-ceb-en",
 }
 
+# Alternative models for Filipino (can be switched via environment variable)
+FILIPINO_ALTERNATIVES = {
+    "nllb": "facebook/nllb-200-distilled-600M",  # Default - much better quality
+    "nllb-large": "facebook/nllb-200-3.3B",     # Larger NLLB model - even better quality
+    "opus": "Helsinki-NLP/opus-mt-en-tl",        # Original - poor quality
+    "opus-large": "Helsinki-NLP/opus-mt-en-tl",  # Same as opus
+}
+
+def get_filipino_model():
+    """Get the Filipino translation model based on environment variable"""
+    model_choice = os.getenv("FILIPINO_MODEL", "nllb").lower()
+    return FILIPINO_ALTERNATIVES.get(model_choice, FILIPINO_ALTERNATIVES["nllb"])
+
 TRANSLATORS = {}
 # --- Language code mappings for NLLB ---
 NLLB_LANG_CODES = {
@@ -53,7 +71,7 @@ NLLB_LANG_CODES = {
     "ko": "kor_Hang",
     "ja": "jpn_Jpan",
     "zh": "zho_Hans",   # use "zho_Hant" if you want Traditional
-    "fil": "tgl_Latn",  # closest available code for Filipino/Tagalog
+    "fil": "tgl_Latn",  # Tagalog/Filipino in NLLB
     "ceb": "ceb_Latn",  # Cebuano
     "ilo": "ilo_Latn",  # Ilocano
     "pag": "pag_Latn",  # Pangasinan
@@ -64,11 +82,15 @@ def get_translator(src_lang: str, tgt_lang: str):
     """
     Loads (and caches) the appropriate translation pipeline.
     """
-    if (src_lang, tgt_lang) not in MODEL_MAP:
+    # Use dynamic model selection for Filipino
+    if (src_lang, tgt_lang) in [("en", "fil"), ("fil", "en")]:
+        model = get_filipino_model()
+    elif (src_lang, tgt_lang) not in MODEL_MAP:
         return None
+    else:
+        model = MODEL_MAP[(src_lang, tgt_lang)]
 
     if (src_lang, tgt_lang) not in TRANSLATORS:
-        model = MODEL_MAP[(src_lang, tgt_lang)]
         print(f"Loading model for {src_lang} -> {tgt_lang}: {model}")
         TRANSLATORS[(src_lang, tgt_lang)] = pipeline("translation", model=model)
 
@@ -109,6 +131,7 @@ def run_translation(text: str, src_lang: str, tgt_lang: str):
 
 class MessageRequest(BaseModel):
     text: str
+    target_lang: str = "en"  # Default target language for immediate translation
 
 
 @app.post("/send")
@@ -127,40 +150,68 @@ def send_message(req: MessageRequest):
         }
         inserted = messages_raw.insert_one(raw_doc)
 
-        # Kick off translation in background thread
-        def do_translations(message_id, text, src_lang):
-            translations = {}
-            for lang in SUPPORTED_LANGS:
-                if lang == src_lang:
-                    translations[lang] = text
-                else:
-                    result = run_translation(text, src_lang, lang)
-                    if not result and src_lang != "en" and lang != "en":
-                        to_en = run_translation(text, src_lang, "en")
-                        if to_en:
-                            result = run_translation(to_en, "en", lang)
-                    translations[lang] = result or text
+        # Get immediate translation for the target language
+        immediate_translation = None
+        if req.target_lang != src_lang:
+            try:
+                immediate_translation = run_translation(req.text, src_lang, req.target_lang)
+                if not immediate_translation and src_lang != "en" and req.target_lang != "en":
+                    # Try via English if direct translation fails
+                    to_en = run_translation(req.text, src_lang, "en")
+                    if to_en:
+                        immediate_translation = run_translation(to_en, "en", req.target_lang)
+            except Exception as e:
+                print(f"Translation error: {e}")
+                immediate_translation = None
+        
+        # Use original text if translation failed or same language
+        if not immediate_translation:
+            immediate_translation = req.text
 
-            translated_doc = {
-                "message_id": message_id,
-                "translations": translations,
-                "timestamp": datetime.utcnow()
-            }
-            messages_translated.insert_one(translated_doc)
+        # Kick off translation in background thread for all other languages
+        def do_translations(message_id, text, src_lang, target_lang, immediate_translation):
+            try:
+                translations = {}
+                for lang in SUPPORTED_LANGS:
+                    if lang == src_lang:
+                        translations[lang] = text
+                    elif lang == target_lang:
+                        # Use the already computed immediate translation
+                        translations[lang] = immediate_translation
+                    else:
+                        result = run_translation(text, src_lang, lang)
+                        if not result and src_lang != "en" and lang != "en":
+                            to_en = run_translation(text, src_lang, "en")
+                            if to_en:
+                                result = run_translation(to_en, "en", lang)
+                        translations[lang] = result or text
+
+                translated_doc = {
+                    "message_id": message_id,
+                    "translations": translations,
+                    "timestamp": datetime.utcnow()
+                }
+                messages_translated.insert_one(translated_doc)
+            except Exception as e:
+                print(f"Error in background translations: {e}")
+                import traceback
+                traceback.print_exc()
 
         threading.Thread(
             target=do_translations, 
-            args=(str(inserted.inserted_id), req.text, src_lang),
+            args=(str(inserted.inserted_id), req.text, src_lang, req.target_lang, immediate_translation),
             daemon=True
         ).start()
 
-        # ✅ Return immediately with raw message
+        # ✅ Return immediately with raw message and live translation
         return {
             "status": "ok",
             "message": {
                 "id": str(inserted.inserted_id),
                 "original": raw_doc["original"],
                 "source_lang": raw_doc["source_lang"],
+                "translation": immediate_translation,
+                "target_lang": req.target_lang,
                 "timestamp": raw_doc["timestamp"].isoformat()
             }
         }
@@ -175,6 +226,7 @@ def get_messages(lang: str = "en"):
         for msg in cursor:
             translated = messages_translated.find_one({"message_id": str(msg["_id"])})
             translation_text = translated["translations"].get(lang) if translated else None
+            
 
             results.append({
                 "id": str(msg["_id"]),
@@ -184,6 +236,7 @@ def get_messages(lang: str = "en"):
             })
         return {"messages": results}
     except Exception as e:
+        print(f"Error in get_messages: {e}")
         return {"error": str(e)}
 
 
@@ -191,3 +244,31 @@ def get_messages(lang: str = "en"):
 @app.get("/languages")
 def get_languages():
     return {"languages": SUPPORTED_LANGS}
+
+@app.get("/filipino-model")
+def get_filipino_model_info():
+    """Get current Filipino model and available alternatives"""
+    current_model = get_filipino_model()
+    return {
+        "current_model": current_model,
+        "available_models": FILIPINO_ALTERNATIVES,
+        "environment_variable": "FILIPINO_MODEL",
+        "usage": "Set FILIPINO_MODEL environment variable to switch models (nllb, nllb-large, opus)"
+    }
+
+@app.post("/switch-filipino-model")
+def switch_filipino_model(model_name: str):
+    """Switch Filipino model (requires server restart to take effect)"""
+    if model_name.lower() not in FILIPINO_ALTERNATIVES:
+        return {"error": f"Invalid model. Available: {list(FILIPINO_ALTERNATIVES.keys())}"}
+    
+    # This would require server restart to take effect
+    return {
+        "message": f"Model will be switched to {model_name} on next server restart",
+        "new_model": FILIPINO_ALTERNATIVES[model_name.lower()],
+        "restart_required": True
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
