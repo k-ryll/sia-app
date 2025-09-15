@@ -1,11 +1,11 @@
-fastapi
-uvicorn
-transformers
-sentencepiece
-protobuf 
-sacremoses
-langdetect
-pymongo
-torch
-motor
-
+fastapi==0.112.0
+uvicorn==0.30.3
+transformers==4.44.0
+sentencepiece==0.2.0
+protobuf==4.25.3
+sacremoses==0.1.1
+langdetect==1.0.9
+pymongo==4.8.0
+torch==2.4.0+cpu
+motor==3.5.1
+--extra-index-url https://download.pytorch.org/whl/cpu

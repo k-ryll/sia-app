@@ -9,12 +9,26 @@ from bson import ObjectId
 import threading
 import os
 
+
 DetectorFactory.seed = 0
 
 app = FastAPI(title="GabayLakbay Translation Microservice")
 
+client = MongoClient(os.getenv("MONGODB_URL"))
+db = client["gabaylakbay"]          # database
+collection = db["gabaylakbay"]      # collection
+
 # --- CORS ---
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+
+cors_origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://gabaylakbay-app.azurewebsites.net",
+    "https://gabaylakbay-app.azurewebsites.net",
+    "https://gabaylakbay-backend.azurewebsites.net",
+    "http://gabaylakbay-backend.azurewebsites.net"
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -22,6 +36,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # --- MongoDB setup ---
 mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")

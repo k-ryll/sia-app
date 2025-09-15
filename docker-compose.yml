@@ -38,8 +38,8 @@ services:
   # React Frontend
   frontend:
     build:
-      context: .
-      dockerfile: transportation-system-demo/Dockerfile
+      context:  ./transportation-system-demo
+      dockerfile: Dockerfile
     container_name: gabaylakbay-frontend
     restart: unless-stopped
     ports:
