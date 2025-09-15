@@ -23,10 +23,8 @@ collection = db["gabaylakbay"]      # collection
 cors_origins = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "http://gabaylakbay-app.azurewebsites.net",
-    "https://gabaylakbay-app.azurewebsites.net",
-    "https://gabaylakbay-backend.azurewebsites.net",
-    "http://gabaylakbay-backend.azurewebsites.net"
+    "http://72.60.194.243:3000"
+
 ]
 
 app.add_middleware(

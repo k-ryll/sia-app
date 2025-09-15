@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: "https://gabaylakbay-backend.azurewebsites.net", // <- deployed backend
+  BASE_URL: "http://72.60.194.243:8000", // <- deployed backend
   ENDPOINTS: {
     TRANSLATE: "/translate/",
     LANGUAGES: "/languages",
